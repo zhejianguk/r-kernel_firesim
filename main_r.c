@@ -31,6 +31,10 @@ void* thread_r_checker(void* args){
 	
 	ghe_asR();
 	ght_set_satp_priv();
+
+	while (ghe_checkght_status() != 0x04) {
+	}
+
 	ghe_go();
 	ghe_initailised(1);
 
@@ -85,7 +89,22 @@ void* thread_r_checker(void* args){
 	uint64_t perf_val_NOT = ghe_perf_read();
 	ghe_perf_ctrl(0x04<<1);
 	uint64_t perf_val_NNC = ghe_perf_read();
+	ghe_perf_ctrl(0x05<<1);
+	uint64_t Nonchecking_OtherThreads = ghe_perf_read();
+	ghe_perf_ctrl(0x06<<1);
+	uint64_t Nonchecking_MOtherThreads = ghe_perf_read();
+	ghe_perf_ctrl(0x08<<1);
+	uint64_t Nonchecking_MCheck = ghe_perf_read();
+	ghe_perf_ctrl(0x09<<1);
+	uint64_t Insts = ghe_perf_read();
+	ghe_perf_ctrl(0x0a<<1);
+	uint64_t CPSTrans = ghe_perf_read();
+	ghe_perf_ctrl(0x0b<<1);
+	uint64_t Nonchecking_Sched = ghe_perf_read();
+	
 
+
+	/*
 	lock_acquire(&uart_lock);
 	printf("================ PERF: C%x ================\r\n", hart_id);
 	printf("[Rocket-C%x]: Perf: N.CheckPoints = %ld \r\n", hart_id, perf_val_NCP);
@@ -93,9 +112,30 @@ void* thread_r_checker(void* args){
 	printf("[Rocket-C%x]: Perf: N.PostcheckingState = %ld \r\n", hart_id, perf_val_NPC);
 	printf("[Rocket-C%x]: Perf: N.OtherThreads = %ld \r\n", hart_id, perf_val_NOT);
 	printf("[Rocket-C%x]: Perf: N.Idle = %ld \r\n", hart_id, perf_val_NNC);
+	printf("[Rocket-C%x]: Perf: N.Nonchecking_OtherThreads = %ld \r\n", hart_id, Nonchecking_OtherThreads);
+	printf("[Rocket-C%x]: Perf: N.Nonchecking_MOtherThreads = %ld \r\n", hart_id, Nonchecking_MOtherThreads);
+	printf("[Rocket-C%x]: Perf: N.Nonchecking_MCheck = %ld \r\n", hart_id, Nonchecking_MCheck);
+	printf("[Rocket-C%x]: Perf: N.Nonchecking_Sched = %ld \r\n", hart_id, Nonchecking_Sched);
+	printf("[Rocket-C%x]: Perf: N.CPSTrans = %ld \r\n", hart_id, CPSTrans);
+	printf("[Rocket-C%x]: Perf: N.Insts = %ld \r\n", hart_id, Insts);
 	lock_release(&uart_lock);
+	*/
 
-
+	lock_acquire(&uart_lock);
+	printf("================ PERF: C%x ================\r\n", hart_id);
+	printf("[Rocket-C%x]: Perf: N.Debug_perf_blocking_CP = %ld \r\n", hart_id, perf_val_NCP);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_id_ex_h = %ld \r\n", hart_id, perf_val_NC);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_id_mem_h = %ld \r\n", hart_id, perf_val_NPC);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_id_wb_h = %ld \r\n", hart_id, perf_val_NOT);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_id_sb_h = %ld \r\n", hart_id, perf_val_NNC);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_CSR_S = %ld \r\n", hart_id, Nonchecking_OtherThreads);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_FP = %ld \r\n", hart_id, Nonchecking_MOtherThreads);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_MEM = %ld \r\n", hart_id, Nonchecking_MCheck);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_DIV = %ld \r\n", hart_id, Insts);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_ST = %ld \r\n", hart_id, CPSTrans);
+	printf("[Rocket-C%x]: Perf: N.debug_perf_blocking_FENCE = %ld \r\n", hart_id, Nonchecking_Sched);
+	lock_release(&uart_lock);
+	
 	ghe_initailised(0);
 	ghe_release();
   	ght_unset_satp_priv();
@@ -120,12 +160,12 @@ void rStartup (void) {
 		pthread_create(&threads[i], NULL, thread_r_checker, (void *) (i+1));
 	}
 
-	
+	ROCC_INSTRUCTION (1, 0x34);
 	while (ght_get_initialisation() == 0){
  	}
 
 	ght_set_satp_priv();
-	printf("[Boom-%x]: Test is now started: \r\n", BOOM_ID);
+	// printf("[Boom-%x]: Test is now started: \r\n", BOOM_ID);
 
 	//======================= Perf ========================//
 	ghe_perf_ctrl(0x01);
